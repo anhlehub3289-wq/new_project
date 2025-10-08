@@ -1,4 +1,4 @@
-# investment_app.py - PHIÊN BẢN CẬP NHẬT: CHO PHÉP CHỈNH SỬA THÔNG SỐ THỦ CÔNG
+# investment_app.py - Phiên bản HOÀN CHỈNH (Sửa lỗi Rerun và Thêm Chỉnh sửa Thủ công)
 
 import streamlit as st
 import pandas as pd
@@ -18,7 +18,7 @@ st.set_page_config(
 
 st.title("Ứng dụng Đánh giá Phương án Kinh doanh 📈")
 
-# --- Hàm đọc file Word (Giữ nguyên) ---
+# --- Hàm đọc file Word ---
 def read_docx_file(uploaded_file):
     """Đọc nội dung văn bản từ file Word."""
     try:
@@ -30,11 +30,11 @@ def read_docx_file(uploaded_file):
     except Exception as e:
         return f"Lỗi đọc file Word: {e}"
 
-# --- Hàm gọi API Gemini để trích xuất thông tin (Giữ nguyên) ---
+# --- Hàm gọi API Gemini để trích xuất thông tin (Yêu cầu 1) ---
 @st.cache_data
 def extract_financial_data(doc_text, api_key):
     """Sử dụng Gemini để trích xuất các thông số tài chính từ văn bản."""
-    # ... (Giữ nguyên logic trích xuất JSON) ...
+    
     if not api_key:
         raise ValueError("Khóa API không được cung cấp.")
         
@@ -80,7 +80,7 @@ def extract_financial_data(doc_text, api_key):
     return pd.read_json(io.StringIO(json_str), typ='series')
 
 
-# --- Hàm tính toán Chỉ số Tài chính (Giữ nguyên) ---
+# --- Hàm tính toán Chỉ số Tài chính (Yêu cầu 3) ---
 def calculate_project_metrics(df_cashflow, initial_investment, wacc):
     """Tính toán NPV, IRR, PP, DPP."""
     
@@ -129,7 +129,7 @@ def calculate_project_metrics(df_cashflow, initial_investment, wacc):
         
     return npv_value, irr_value, pp, dpp
 
-# --- Hàm gọi AI phân tích chỉ số (Giữ nguyên) ---
+# --- Hàm gọi AI phân tích chỉ số (Yêu cầu 4) ---
 def get_ai_evaluation(metrics_data, wacc_rate, api_key):
     """Gửi các chỉ số đánh giá dự án đến Gemini API và nhận phân tích."""
     
@@ -223,7 +223,7 @@ if uploaded_file is not None:
 if st.session_state['extracted_data'] is not None:
     data = st.session_state['extracted_data']
     st.subheader("2. Kiểm tra và Cập nhật Thông số Dự án (Thủ công)")
-    st.info("💡 Các thông số đã được AI trích xuất (hoặc gán giá trị mặc định 0) sẽ được điền vào ô bên dưới. **Vui lòng kiểm tra và sửa lại** nếu cần.")
+    st.info("💡 Các thông số đã được AI trích xuất (hoặc gán giá trị mặc định) sẽ được điền vào ô bên dưới. **Vui lòng kiểm tra và sửa lại** nếu cần.")
     
     # Tạo Form để người dùng dễ dàng xác nhận/sửa dữ liệu
     with st.form("data_correction_form"):
@@ -248,6 +248,7 @@ if st.session_state['extracted_data'] is not None:
 
         # Cột 2: Dòng đời & Chi phí
         with col2:
+            # Đảm bảo Dòng đời dự án ít nhất là 1 để tránh lỗi chia cho 0
             project_life = st.number_input(
                 "Dòng đời dự án (N) (Năm)", 
                 min_value=1, 
@@ -265,7 +266,7 @@ if st.session_state['extracted_data'] is not None:
         with col3:
             wacc = st.number_input(
                 "WACC (k) (%)", 
-                min_value=0.0, 
+                min_value=0.01, # Đảm bảo WACC tối thiểu 1%
                 max_value=100.0, 
                 value=data['WACC'] * 100,
                 step=0.1,
@@ -285,7 +286,7 @@ if st.session_state['extracted_data'] is not None:
         
         if submitted:
             if project_life <= 0 or initial_investment < 0 or wacc <= 0:
-                st.error("Lỗi: Dòng đời dự án, Vốn đầu tư phải lớn hơn 0 và WACC phải lớn hơn 0 để tính toán.")
+                st.error("Lỗi: Dòng đời dự án và WACC phải lớn hơn 0 để tính toán.")
             else:
                 st.session_state['confirmed_data'] = {
                     'Vốn đầu tư': initial_investment,
@@ -295,7 +296,8 @@ if st.session_state['extracted_data'] is not None:
                     'WACC': wacc,
                     'Thuế suất': tax_rate
                 }
-                st.experimental_rerun() # Chạy lại để hiển thị kết quả tính toán
+                # SỬA LỖI: Thay st.experimental_rerun() bằng st.rerun()
+                st.rerun() 
 
 # --- Bắt đầu tính toán (Chức năng 3, 4, 5) ---
 if st.session_state['confirmed_data'] is not None:
